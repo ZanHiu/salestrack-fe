@@ -1,5 +1,6 @@
 'use client';
 
+import { Search } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -7,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCategories } from '@/hooks/useProducts';
 
@@ -17,6 +19,8 @@ interface FiltersProps {
   onCustomerChange: (id: string) => void;
   categoryFilter: string | null;
   onCategoryChange: (cat: string | null) => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
 }
 
 const YEAR_OPTIONS = [2022, 2023, 2024, 2025, 2026, 2027];
@@ -28,6 +32,8 @@ export function EntriesFilters({
   onCustomerChange,
   categoryFilter,
   onCategoryChange,
+  searchQuery,
+  onSearchChange,
 }: FiltersProps) {
   const { data: customersData } = useCustomers({ isActive: true, pageSize: 200 });
   const { data: categories } = useCategories();
@@ -80,6 +86,24 @@ export function EntriesFilters({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="w-[220px]">
+        <label className="text-xs text-muted-foreground mb-1 block font-medium">
+          Tìm sản phẩm
+        </label>
+        <div className="relative">
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            placeholder="Tên sản phẩm..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-8"
+          />
+        </div>
       </div>
     </div>
   );
