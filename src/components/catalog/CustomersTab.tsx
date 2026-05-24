@@ -36,16 +36,18 @@ export function CustomersTab() {
 
   return (
     <div className="grid grid-cols-[1fr_1.2fr] gap-4 h-full">
-      <div className="border rounded-lg bg-white flex flex-col overflow-hidden">
-        <div className="p-3 border-b space-y-2">
+      <div className="border border-border rounded-md bg-card shadow-card flex flex-col overflow-hidden">
+        <div className="p-3 border-b border-border space-y-2.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Danh sách ({filtered.length})</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Danh sách ({filtered.length})
+            </h3>
             <Button size="sm" onClick={handleAdd}>
               <Plus size={14} className="mr-1.5" /> Thêm
             </Button>
           </div>
           <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Tìm kiếm..."
               value={search}
@@ -56,9 +58,9 @@ export function CustomersTab() {
         </div>
         <div className="flex-1 overflow-auto">
           {isLoading ? (
-            <div className="p-4 text-sm text-center text-slate-500">Đang tải...</div>
+            <div className="p-4 text-sm text-center text-muted-foreground">Đang tải...</div>
           ) : filtered.length === 0 ? (
-            <div className="p-4 text-sm text-center text-slate-500">Không có khách hàng</div>
+            <div className="p-4 text-sm text-center text-muted-foreground">Không có khách hàng</div>
           ) : (
             <ul>
               {filtered.map((c) => (
@@ -67,14 +69,16 @@ export function CustomersTab() {
                     type="button"
                     onClick={() => handleSelect(c)}
                     className={cn(
-                      'w-full text-left px-3 py-2 text-sm border-b hover:bg-slate-50 transition-colors',
-                      selectedId === c._id && 'bg-blue-50 text-blue-900 font-medium',
+                      'w-full text-left px-3 py-2 text-sm border-b border-border/50 hover:bg-secondary/40 transition-colors text-foreground',
+                      selectedId === c._id && 'bg-primary/5 text-primary font-medium',
                     )}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="truncate">{c.name}</span>
                       {!c.isActive && (
-                        <span className="text-xs text-slate-400 ml-2">ngừng KD</span>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">
+                          ngừng KD
+                        </span>
                       )}
                     </div>
                   </button>
@@ -85,10 +89,26 @@ export function CustomersTab() {
         </div>
       </div>
 
-      <div className="border rounded-lg bg-white p-4 overflow-auto">
+      <div className="border border-border rounded-md bg-card shadow-card p-5 overflow-auto">
         {!selected && !isNew ? (
-          <div className="h-full flex items-center justify-center text-sm text-slate-500">
-            Chọn khách hàng hoặc &quot;Thêm&quot; để bắt đầu
+          <div className="h-full flex flex-col items-center justify-center gap-3">
+            <svg
+              width="56"
+              height="56"
+              viewBox="0 0 56 56"
+              fill="none"
+              className="text-primary/30"
+              aria-hidden="true"
+            >
+              <circle cx="28" cy="20" r="8" stroke="currentColor" strokeWidth="2" />
+              <path d="M10 46c0-9 8-16 18-16s18 7 18 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <div className="text-center space-y-0.5">
+              <p className="text-sm font-medium text-foreground">Chưa chọn khách hàng</p>
+              <p className="text-xs text-muted-foreground">
+                Chọn từ danh sách bên trái hoặc bấm &quot;Thêm&quot;
+              </p>
+            </div>
           </div>
         ) : (
           <CustomerForm
