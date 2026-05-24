@@ -20,7 +20,7 @@ export const reportsApi = {
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `salestrack-${year}.xlsx`;
+    link.download = `KQBH_${year}.xlsx`;
     link.click();
     window.URL.revokeObjectURL(url);
   },
