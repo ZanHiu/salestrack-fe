@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
+import { EmptyState } from '@/components/EmptyState';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EntriesFilters } from '@/components/entries/EntriesFilters';
 import { EntriesTable } from '@/components/entries/EntriesTable';
@@ -14,6 +16,7 @@ export default function EntriesPage() {
   const categoryFilter = usePrefs((s) => s.entriesCategoryFilter);
   const viewMode = usePrefs((s) => s.entriesViewMode);
   const patch = usePrefs((s) => s.patch);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { updateUrl } = useUrlPrefSync({
     tab: { key: 'entriesViewMode', parse: (v) => v as EntriesViewMode },
@@ -82,6 +85,8 @@ export default function EntriesPage() {
           onCustomerChange={setCustomerId}
           categoryFilter={categoryFilter}
           onCategoryChange={setCategoryFilter}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
       </div>
 
@@ -93,6 +98,7 @@ export default function EntriesPage() {
             year={year}
             customerId={customerId}
             categoryFilter={categoryFilter}
+            searchQuery={searchQuery}
             viewMode={viewMode}
           />
         )}
@@ -103,32 +109,29 @@ export default function EntriesPage() {
 
 function EmptyCustomerState() {
   return (
-    <div className="bg-card border border-border rounded-md h-full flex flex-col items-center justify-center gap-3 shadow-card">
-      <svg
-        width="64"
-        height="64"
-        viewBox="0 0 64 64"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="text-primary/30"
-        aria-hidden="true"
-      >
-        <rect x="10" y="14" width="44" height="38" rx="2" stroke="currentColor" strokeWidth="2" />
-        <line x1="10" y1="22" x2="54" y2="22" stroke="currentColor" strokeWidth="2" />
-        <line x1="22" y1="14" x2="22" y2="52" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="16" y1="30" x2="20" y2="30" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="16" y1="36" x2="20" y2="36" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="16" y1="42" x2="20" y2="42" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="28" y1="30" x2="50" y2="30" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="28" y1="36" x2="50" y2="36" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="28" y1="42" x2="50" y2="42" stroke="currentColor" strokeWidth="1.5" />
-      </svg>
-      <div className="text-center space-y-1">
-        <p className="font-medium text-foreground">Chọn khách hàng để mở sổ</p>
-        <p className="text-sm text-muted-foreground">
-          Mỗi khách hàng có một sổ riêng theo năm
-        </p>
-      </div>
-    </div>
+    <EmptyState
+      icon={
+        <svg
+          width="64"
+          height="64"
+          viewBox="0 0 64 64"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <rect x="10" y="14" width="44" height="38" rx="2" stroke="currentColor" strokeWidth="2" />
+          <line x1="10" y1="22" x2="54" y2="22" stroke="currentColor" strokeWidth="2" />
+          <line x1="22" y1="14" x2="22" y2="52" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="16" y1="30" x2="20" y2="30" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="16" y1="36" x2="20" y2="36" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="16" y1="42" x2="20" y2="42" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="28" y1="30" x2="50" y2="30" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="28" y1="36" x2="50" y2="36" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="28" y1="42" x2="50" y2="42" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      }
+      title="Chọn khách hàng để mở sổ"
+      description="Mỗi khách hàng có một sổ riêng theo năm"
+    />
   );
 }
