@@ -22,7 +22,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster position="top-right" richColors />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          classNames: {
+            toast:
+              'font-sans border border-border shadow-card bg-card text-foreground',
+            success: 'border-l-4 border-l-success',
+            error: 'border-l-4 border-l-destructive',
+            warning: 'border-l-4 border-l-warning',
+            info: 'border-l-4 border-l-primary',
+          },
+        }}
+      />
     </QueryClientProvider>
   );
 }
