@@ -3,13 +3,21 @@ import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="text-center space-y-4">
-        <div className="text-6xl font-bold text-slate-300">404</div>
-        <h1 className="text-xl font-semibold">Không tìm thấy trang</h1>
-        <p className="text-sm text-slate-500">Liên kết không tồn tại hoặc đã bị xóa</p>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="text-center space-y-6 max-w-md">
+        <div className="font-heading font-bold text-7xl text-primary/20 leading-none">
+          404
+        </div>
+        <div className="space-y-2">
+          <h1 className="font-heading font-semibold text-xl text-foreground">
+            Không tìm thấy trang
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Liên kết không tồn tại hoặc đã bị xóa
+          </p>
+        </div>
         <Button asChild>
-          <Link href="/entries">Về trang chủ</Link>
+          <Link href="/entries">Về sổ doanh số</Link>
         </Button>
       </div>
     </div>
