@@ -86,7 +86,7 @@ export function BulkImportButton({ defaultYear }: Props) {
                 accept=".xlsx,.xls"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 File cần có sheet tên &quot;KHACH HANG&quot;
               </p>
             </div>
@@ -103,10 +103,10 @@ export function BulkImportButton({ defaultYear }: Props) {
             </div>
             {result.errors.length > 0 && (
               <details className="text-xs mt-2">
-                <summary className="cursor-pointer text-slate-600">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
                   Chi tiết lỗi
                 </summary>
-                <ul className="mt-1 max-h-40 overflow-auto bg-slate-50 rounded p-2">
+                <ul className="mt-1 max-h-40 overflow-auto bg-secondary rounded p-2">
                   {result.errors.slice(0, 50).map((e, i) => (
                     <li key={i}>Row {e.row}: {e.reason}</li>
                   ))}

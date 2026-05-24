@@ -37,7 +37,7 @@ export function EntriesFilters({
   return (
     <div className="flex flex-wrap gap-3 items-end">
       <div className="w-[100px]">
-        <label className="text-xs text-slate-500 mb-1 block">Năm</label>
+        <label className="text-xs text-muted-foreground mb-1 block font-medium">Năm</label>
         <Select value={String(year)} onValueChange={(v) => onYearChange(Number(v))}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -49,7 +49,9 @@ export function EntriesFilters({
       </div>
 
       <div className="w-[240px]">
-        <label className="text-xs text-slate-500 mb-1 block">Khách hàng *</label>
+        <label className="text-xs text-muted-foreground mb-1 block font-medium">
+          Khách hàng <span className="text-brand-orange">*</span>
+        </label>
         <Select value={customerId ?? ''} onValueChange={onCustomerChange}>
           <SelectTrigger>
             <SelectValue placeholder="Chọn khách hàng..." />
@@ -63,7 +65,9 @@ export function EntriesFilters({
       </div>
 
       <div className="w-[200px]">
-        <label className="text-xs text-slate-500 mb-1 block">Nhóm sản phẩm</label>
+        <label className="text-xs text-muted-foreground mb-1 block font-medium">
+          Nhóm sản phẩm
+        </label>
         <Select
           value={categoryFilter ?? '__all__'}
           onValueChange={(v) => onCategoryChange(v === '__all__' ? null : v)}

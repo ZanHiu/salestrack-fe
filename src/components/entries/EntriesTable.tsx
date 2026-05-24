@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { cn, formatMillion } from '@/lib/utils';
 import { useProducts } from '@/hooks/useProducts';
-import { TableSkeleton } from '@/components/TableSkeleton';
 import {
   useEntriesByCustomer,
   useUpsertEntry,
@@ -14,6 +13,7 @@ import {
 import { getApiErrorMessage } from '@/lib/api/client';
 import { EntryCell, ViewMode } from './EntryCell';
 import { EntryDetailModal } from './EntryDetailModal';
+import { TableSkeleton } from '@/components/TableSkeleton';
 
 interface EntriesTableProps {
   year: number;
@@ -28,6 +28,12 @@ interface FocusCoord {
 }
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+const QUARTERS = [
+  { label: 'Q1', span: 3 },
+  { label: 'Q2', span: 3 },
+  { label: 'Q3', span: 3 },
+  { label: 'Q4', span: 3 },
+];
 
 export function EntriesTable({
   year,
@@ -45,7 +51,9 @@ export function EntriesTable({
   const upsert = useUpsertEntry(year, customerId);
 
   const [focus, setFocus] = useState<FocusCoord | null>(null);
+  const [hoverCol, setHoverCol] = useState<number | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [justSavedKey, setJustSavedKey] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState<FocusCoord | null>(null);
 
   const allRows = useMemo<PivotRow[]>(
@@ -55,7 +63,9 @@ export function EntriesTable({
 
   const rows = useMemo(
     () =>
-      categoryFilter ? allRows.filter((r) => r.product.categoryName === categoryFilter) : allRows,
+      categoryFilter
+        ? allRows.filter((r) => r.product.categoryName === categoryFilter)
+        : allRows,
     [allRows, categoryFilter],
   );
 
@@ -94,6 +104,10 @@ export function EntriesTable({
       },
       {
         onSettled: () => setSavingKey(null),
+        onSuccess: () => {
+          setJustSavedKey(key);
+          setTimeout(() => setJustSavedKey(null), 700);
+        },
         onError: (err) => {
           toast.error(getApiErrorMessage(err));
         },
@@ -113,14 +127,15 @@ export function EntriesTable({
       else setFocus(null);
     } else if (direction === 'ShiftTab') {
       if (focus.month > 1) setFocus({ ...focus, month: focus.month - 1 });
-      else if (idx > 0)
-        setFocus({ productId: rows[idx - 1].product._id, month: 12 });
+      else if (idx > 0) setFocus({ productId: rows[idx - 1].product._id, month: 12 });
       else setFocus(null);
     } else if (direction === 'Enter' || direction === 'ArrowDown') {
-      if (idx < rows.length - 1) setFocus({ productId: rows[idx + 1].product._id, month: focus.month });
+      if (idx < rows.length - 1)
+        setFocus({ productId: rows[idx + 1].product._id, month: focus.month });
       else setFocus(null);
     } else if (direction === 'ArrowUp') {
-      if (idx > 0) setFocus({ productId: rows[idx - 1].product._id, month: focus.month });
+      if (idx > 0)
+        setFocus({ productId: rows[idx - 1].product._id, month: focus.month });
       else setFocus(null);
     }
   }
@@ -131,7 +146,7 @@ export function EntriesTable({
 
   if (rows.length === 0) {
     return (
-      <div className="p-8 text-center text-sm text-slate-500">
+      <div className="border border-border rounded-md bg-card p-12 text-center text-sm text-muted-foreground">
         Không có sản phẩm nào.
       </div>
     );
@@ -147,21 +162,48 @@ export function EntriesTable({
 
   return (
     <>
-      <div className="border rounded-lg overflow-auto bg-white h-full">
+      <div className="border border-border rounded-md overflow-auto bg-card h-full shadow-card">
         <table className="w-full text-sm border-collapse">
-          <thead className="bg-slate-100 sticky top-0 z-30">
-            <tr>
-              <th className="sticky left-0 z-40 bg-slate-100 px-3 py-2 text-left font-medium min-w-[200px] border-r">
+          <thead className="sticky top-0 z-30">
+            {/* Tier 1: Quarters */}
+            <tr className="bg-brand-cream-warm">
+              <th
+                rowSpan={2}
+                className="sticky left-0 z-40 bg-brand-cream-warm px-3 py-2 text-left font-heading font-semibold text-foreground min-w-[220px] border-r border-b border-border"
+              >
                 Sản phẩm
               </th>
+              {QUARTERS.map((q, qi) => (
+                <th
+                  key={qi}
+                  colSpan={q.span}
+                  className="px-2 py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border"
+                >
+                  {q.label}
+                </th>
+              ))}
+              <th
+                rowSpan={2}
+                className="px-3 py-2 text-right font-heading font-semibold text-foreground bg-brand-cream-warm w-[96px] border-l border-b border-border"
+              >
+                Tổng
+              </th>
+            </tr>
+            {/* Tier 2: Months */}
+            <tr className="bg-brand-cream-warm">
               {MONTHS.map((m) => (
-                <th key={m} className="px-2 py-2 text-right font-medium w-[70px]">
+                <th
+                  key={m}
+                  onMouseEnter={() => setHoverCol(m)}
+                  onMouseLeave={() => setHoverCol(null)}
+                  className={cn(
+                    'px-2 py-1.5 text-right font-mono font-medium text-foreground/80 w-[68px] border-b border-border transition-colors',
+                    hoverCol === m && 'bg-primary/10',
+                  )}
+                >
                   T{m}
                 </th>
               ))}
-              <th className="px-3 py-2 text-right font-semibold bg-slate-200 w-[90px]">
-                Tổng
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -171,26 +213,38 @@ export function EntriesTable({
                 group={g}
                 viewMode={viewMode}
                 focus={focus}
+                hoverCol={hoverCol}
+                setHoverCol={setHoverCol}
                 setFocus={setFocus}
                 savingKey={savingKey}
+                justSavedKey={justSavedKey}
                 onCommit={commit}
                 onCancel={() => setFocus(null)}
                 onKey={moveFocus}
                 onOpenDetail={setModalOpen}
               />
             ))}
-            <tr className="bg-slate-100 font-semibold border-t-2">
-              <td className="sticky left-0 z-20 bg-slate-100 px-3 py-2 border-r">TỔNG</td>
+            {/* Total row — sticky bottom */}
+            <tr className="font-heading font-semibold">
+              <td className="sticky left-0 bottom-0 z-30 bg-brand-cream-warm px-3 py-2.5 border-r border-t-2 border-border text-foreground">
+                TỔNG
+              </td>
               {MONTHS.map((m) => {
                 const t = monthTotals[m];
                 const v = viewMode === 'plan' ? t.plan : t.actual;
                 return (
-                  <td key={m} className="px-2 py-2 text-right tabular-nums">
+                  <td
+                    key={m}
+                    className={cn(
+                      'sticky bottom-0 z-20 bg-brand-cream-warm px-2 py-2.5 text-right font-mono border-t-2 border-border transition-colors',
+                      hoverCol === m && 'bg-primary/10',
+                    )}
+                  >
                     {v === 0 ? '—' : formatMillion(v)}
                   </td>
                 );
               })}
-              <td className="px-3 py-2 text-right tabular-nums bg-slate-200">
+              <td className="sticky bottom-0 z-20 px-3 py-2.5 text-right font-mono bg-brand-cream-warm border-l border-t-2 border-border">
                 {formatMillion(viewMode === 'plan' ? grandTotal.plan : grandTotal.actual)}
               </td>
             </tr>
@@ -218,8 +272,11 @@ interface GroupRowsProps {
   group: { categoryName: string; rows: PivotRow[] };
   viewMode: ViewMode;
   focus: FocusCoord | null;
+  hoverCol: number | null;
+  setHoverCol: (c: number | null) => void;
   setFocus: (f: FocusCoord | null) => void;
   savingKey: string | null;
+  justSavedKey: string | null;
   onCommit: (productId: string, month: number, value: number) => void;
   onCancel: () => void;
   onKey: (key: 'Enter' | 'Tab' | 'ShiftTab' | 'ArrowUp' | 'ArrowDown') => void;
@@ -230,8 +287,11 @@ function GroupRows({
   group,
   viewMode,
   focus,
+  hoverCol,
+  setHoverCol,
   setFocus,
   savingKey,
+  justSavedKey,
   onCommit,
   onCancel,
   onKey,
@@ -239,34 +299,54 @@ function GroupRows({
 }: GroupRowsProps) {
   return (
     <>
-      <tr className="bg-slate-50">
-        <td
-          colSpan={14}
-          className="sticky left-0 z-20 px-3 py-1 text-xs font-semibold text-slate-600 uppercase bg-slate-50"
-        >
+      <tr className="border-y border-border">
+        <td className="sticky left-0 z-20 bg-secondary px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-r border-border whitespace-nowrap">
           {group.categoryName}
         </td>
+        {MONTHS.map((m) => (
+          <td key={m} className="bg-secondary px-2 py-1.5" />
+        ))}
+        <td className="bg-secondary px-3 py-1.5" />
       </tr>
       {group.rows.map((r) => {
+        const isRowFocused = focus?.productId === r.product._id;
         const total = viewMode === 'plan' ? r.totalPlan : r.totalActual;
         return (
-          <tr key={r.product._id} className="border-t hover:bg-slate-50/50">
-            <td className={cn(
-              'sticky left-0 z-20 bg-white px-3 py-0 text-sm border-r whitespace-nowrap',
-              focus?.productId === r.product._id && 'bg-blue-50',
-            )}>
-              <div className="py-2">{r.product.name}</div>
+          <tr
+            key={r.product._id}
+            className={cn(
+              'group/row border-t border-border/50',
+              isRowFocused && 'bg-primary/[0.03]',
+            )}
+          >
+            <td
+              className={cn(
+                'sticky left-0 z-20 px-3 py-0 text-sm border-r border-border whitespace-nowrap transition-colors',
+                isRowFocused ? 'bg-primary/5 font-medium' : 'bg-card group-hover/row:bg-secondary/40',
+              )}
+            >
+              <div className="py-2 text-foreground">{r.product.name}</div>
             </td>
             {MONTHS.map((m) => {
               const isFocused = focus?.productId === r.product._id && focus.month === m;
               const key = `${r.product._id}:${m}`;
+              const isColHover = hoverCol === m;
               return (
-                <td key={m} className="p-0 border-r border-slate-100">
+                <td
+                  key={m}
+                  onMouseEnter={() => setHoverCol(m)}
+                  onMouseLeave={() => setHoverCol(null)}
+                  className={cn(
+                    'group/col p-0 border-r border-border/50 transition-colors',
+                    isColHover && !isFocused && 'bg-primary/[0.03]',
+                  )}
+                >
                   <EntryCell
                     cell={r.cells[m]}
                     viewMode={viewMode}
                     isFocused={isFocused}
                     isSaving={savingKey === key}
+                    justSaved={justSavedKey === key}
                     onFocus={() => setFocus({ productId: r.product._id, month: m })}
                     onCommit={(v) => {
                       onCommit(r.product._id, m, v);
@@ -283,7 +363,7 @@ function GroupRows({
                 </td>
               );
             })}
-            <td className="px-3 py-2 text-right tabular-nums bg-slate-100 font-medium">
+            <td className="px-3 py-2 text-right font-mono bg-brand-cream-muted/40 font-medium text-foreground">
               {total === 0 ? '—' : formatMillion(total)}
             </td>
           </tr>
