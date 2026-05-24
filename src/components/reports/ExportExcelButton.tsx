@@ -9,17 +9,16 @@ import { getApiErrorMessage } from '@/lib/api/client';
 
 interface Props {
   year: number;
-  type: 'by-product' | 'by-customer';
 }
 
-export function ExportExcelButton({ year, type }: Props) {
+export function ExportExcelButton({ year }: Props) {
   const [downloading, setDownloading] = useState(false);
 
   async function handleExport() {
     setDownloading(true);
     try {
-      await reportsApi.exportExcel(year, type);
-      toast.success('Đã xuất file');
+      await reportsApi.exportExcel(year);
+      toast.success('Đã xuất file Excel');
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     } finally {

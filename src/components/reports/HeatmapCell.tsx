@@ -10,10 +10,10 @@ interface HeatmapCellProps {
 }
 
 function heatmapStyle(percent: number | null): string {
-  if (percent === null) return 'text-slate-400';
-  if (percent < 50) return 'bg-red-100 text-red-900';
-  if (percent < 90) return 'bg-amber-100 text-amber-900';
-  return 'bg-green-100 text-green-900';
+  if (percent === null) return 'text-muted-foreground';
+  if (percent < 50) return 'bg-heat-low-bg text-heat-low-text';
+  if (percent < 90) return 'bg-heat-mid-bg text-heat-mid-text';
+  return 'bg-heat-high-bg text-heat-high-text';
 }
 
 export function HeatmapCell({ plan, actual, completionPercent, mode }: HeatmapCellProps) {
@@ -21,9 +21,10 @@ export function HeatmapCell({ plan, actual, completionPercent, mode }: HeatmapCe
     return (
       <div
         className={cn(
-          'h-9 px-2 flex items-center justify-end text-sm font-medium tabular-nums',
+          'h-9 px-2 flex items-center justify-end text-sm font-mono font-medium',
           heatmapStyle(completionPercent),
         )}
+        title={`Plan: ${formatMillion(plan)} · Actual: ${formatMillion(actual)}`}
       >
         {formatPercent(completionPercent)}
       </div>
@@ -34,8 +35,8 @@ export function HeatmapCell({ plan, actual, completionPercent, mode }: HeatmapCe
   return (
     <div
       className={cn(
-        'h-9 px-2 flex items-center justify-end text-sm tabular-nums',
-        value === 0 ? 'text-slate-400' : 'text-slate-900',
+        'h-9 px-2 flex items-center justify-end text-sm font-mono',
+        value === 0 ? 'text-muted-foreground' : 'text-foreground',
       )}
     >
       {value === 0 ? '—' : formatMillion(value)}

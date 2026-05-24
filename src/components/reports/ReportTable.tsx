@@ -51,7 +51,7 @@ function ProductTable({
   }
   if (!data || data.rows.length === 0) {
     return (
-      <div className="p-8 text-center text-sm text-slate-500">
+      <div className="p-8 text-center text-sm text-muted-foreground">
         Không có dữ liệu năm {year}
       </div>
     );
@@ -91,7 +91,7 @@ function CustomerTable({
   }
   if (!data || data.rows.length === 0) {
     return (
-      <div className="p-8 text-center text-sm text-slate-500">
+      <div className="p-8 text-center text-sm text-muted-foreground">
         Không có dữ liệu năm {year}
       </div>
     );
@@ -121,19 +121,19 @@ function TableShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border rounded-lg overflow-auto bg-white h-full">
+    <div className="border border-border rounded-md overflow-auto bg-card h-full shadow-card">
       <table className="w-full text-sm border-collapse">
-        <thead className="bg-slate-100 sticky top-0 z-30">
+        <thead className="bg-brand-cream-warm sticky top-0 z-30">
           <tr>
-            <th className="sticky left-0 z-40 bg-slate-100 px-3 py-2 text-left font-medium min-w-[220px] border-r">
+            <th className="sticky left-0 z-40 bg-brand-cream-warm px-3 py-2 text-left font-heading font-semibold text-foreground min-w-[240px] border-r border-b border-border">
               {labelCol}
             </th>
             {MONTHS.map((m) => (
-              <th key={m} className="px-2 py-2 text-right font-medium w-[70px]">
+              <th key={m} className="px-2 py-2 text-right font-mono font-medium text-foreground/80 w-[68px] border-b border-border">
                 T{m}
               </th>
             ))}
-            <th className="px-3 py-2 text-right font-semibold bg-slate-200 w-[90px]">
+            <th className="px-3 py-2 text-right font-heading font-semibold text-foreground bg-brand-cream-warm w-[96px] border-l border-b border-border">
               Cả năm
             </th>
           </tr>
@@ -153,13 +153,14 @@ function FragmentGroup({
 }) {
   return (
     <>
-      <tr className="bg-slate-50">
-        <td
-          colSpan={14}
-          className="sticky left-0 z-20 px-3 py-1 text-xs font-semibold text-slate-600 uppercase bg-slate-50"
-        >
+      <tr className="border-y border-border">
+        <td className="sticky left-0 z-20 bg-secondary px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-r border-border whitespace-nowrap">
           {categoryName}
         </td>
+        {MONTHS.map((m) => (
+          <td key={m} className="bg-secondary px-2 py-1.5" />
+        ))}
+        <td className="bg-secondary px-3 py-1.5" />
       </tr>
       {children}
     </>
@@ -175,12 +176,12 @@ interface RowProps {
 
 function Row({ label, months, yearTotal, displayMode }: RowProps) {
   return (
-    <tr className={cn('border-t hover:bg-slate-50/50')}>
-      <td className="sticky left-0 z-20 bg-white px-3 py-0 text-sm border-r whitespace-nowrap">
+    <tr className="border-t border-border/50 hover:bg-secondary/30 transition-colors">
+      <td className="sticky left-0 z-20 bg-card hover:bg-secondary/30 px-3 py-0 text-sm border-r border-border whitespace-nowrap text-foreground">
         <div className="py-2">{label}</div>
       </td>
       {months.map((m, i) => (
-        <td key={i} className="p-0 border-r border-slate-100">
+        <td key={i} className="p-0 border-r border-border/50">
           <HeatmapCell
             plan={m.plan}
             actual={m.actual}
@@ -189,7 +190,7 @@ function Row({ label, months, yearTotal, displayMode }: RowProps) {
           />
         </td>
       ))}
-      <td className="px-3 py-2 text-right tabular-nums bg-slate-100 font-medium">
+      <td className="px-3 py-2 text-right font-mono bg-brand-cream-muted/40 font-medium text-foreground">
         {displayMode === 'completion-percent'
           ? formatPercent(yearTotal.completionPercent)
           : formatMillion(displayMode === 'plan' ? yearTotal.plan : yearTotal.actual)}
@@ -220,10 +221,15 @@ function TotalRow({
   });
 
   return (
-    <tr className="bg-slate-100 font-semibold border-t-2">
-      <td className="sticky left-0 z-20 bg-slate-100 px-3 py-2 border-r">TỔNG</td>
+    <tr className="font-heading font-semibold">
+      <td className="sticky left-0 bottom-0 z-30 bg-brand-cream-warm px-3 py-2.5 border-r border-t-2 border-border text-foreground">
+        TỔNG
+      </td>
       {monthAgg.map((m, i) => (
-        <td key={i} className="p-0">
+        <td
+          key={i}
+          className="sticky bottom-0 z-20 bg-brand-cream-warm p-0 border-t-2 border-border"
+        >
           <HeatmapCell
             plan={m.plan}
             actual={m.actual}
@@ -232,7 +238,7 @@ function TotalRow({
           />
         </td>
       ))}
-      <td className="px-3 py-2 text-right tabular-nums bg-slate-200">
+      <td className="sticky bottom-0 z-20 px-3 py-2.5 text-right font-mono bg-brand-cream-warm border-l border-t-2 border-border">
         {displayMode === 'completion-percent'
           ? formatPercent(data.grandTotal.completionPercent)
           : formatMillion(displayMode === 'plan' ? data.grandTotal.plan : data.grandTotal.actual)}
