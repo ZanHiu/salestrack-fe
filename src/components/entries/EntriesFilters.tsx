@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCategories } from '@/hooks/useProducts';
+import { getYearOptions } from '@/lib/constants';
 
 interface FiltersProps {
   year: number;
@@ -22,8 +23,6 @@ interface FiltersProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
 }
-
-const YEAR_OPTIONS = [2022, 2023, 2024, 2025, 2026, 2027];
 
 export function EntriesFilters({
   year,
@@ -39,6 +38,7 @@ export function EntriesFilters({
   const { data: categories } = useCategories();
 
   const customers = customersData?.data ?? [];
+  const yearOptions = getYearOptions();
 
   return (
     <div className="flex flex-wrap gap-3 items-end">
@@ -47,7 +47,7 @@ export function EntriesFilters({
         <Select value={String(year)} onValueChange={(v) => onYearChange(Number(v))}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            {YEAR_OPTIONS.map((y) => (
+            {yearOptions.map((y) => (
               <SelectItem key={y} value={String(y)}>{y}</SelectItem>
             ))}
           </SelectContent>
