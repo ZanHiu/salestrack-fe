@@ -16,8 +16,7 @@ import {
   type ReportsDisplayMode,
 } from '@/lib/prefs/usePrefs';
 import { useUrlPrefSync } from '@/lib/prefs/useUrlPrefSync';
-
-const YEAR_OPTIONS = [2022, 2023, 2024, 2025, 2026, 2027];
+import { getYearOptions } from '@/lib/constants';
 
 export default function ReportsPage() {
   const year = usePrefs((s) => s.year);
@@ -34,6 +33,8 @@ export default function ReportsPage() {
       optional: true,
     },
   });
+
+  const yearOptions = getYearOptions();
 
   function setYear(y: number) {
     patch({ year: y });
@@ -80,7 +81,7 @@ export default function ReportsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {YEAR_OPTIONS.map((y) => (
+                {yearOptions.map((y) => (
                   <SelectItem key={y} value={String(y)}>
                     {y}
                   </SelectItem>
