@@ -26,9 +26,6 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'SalesTrack — Sổ doanh số của Hợp',
   description: 'Quản lý doanh số 20 đại lý × 37 sản phẩm × 12 tháng',
-  icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-  },
 };
 
 export default function RootLayout({
