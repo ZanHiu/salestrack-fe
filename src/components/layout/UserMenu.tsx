@@ -33,15 +33,15 @@ export function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-200 transition-colors text-left">
-        <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-semibold">
+      <DropdownMenuTrigger className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-card transition-colors text-left">
+        <div className="w-8 h-8 bg-primary text-primary-foreground rounded-md flex items-center justify-center text-xs font-semibold font-heading">
           {initials(user.fullName)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">{user.fullName}</div>
-          <div className="text-xs text-slate-500 truncate">{user.role}</div>
+          <div className="text-sm font-medium truncate text-foreground">{user.fullName}</div>
+          <div className="text-xs text-muted-foreground truncate capitalize">{user.role}</div>
         </div>
-        <ChevronUp size={14} className="text-slate-400" />
+        <ChevronUp size={14} className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[180px]">
         <DropdownMenuItem disabled className="text-xs opacity-60">
