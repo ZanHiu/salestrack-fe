@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useProducts } from '@/hooks/useProducts';
+import { getCategoryDot } from '@/lib/category-colors';
 import { ProductForm } from './ProductForm';
 import type { Product } from '@/types/domain';
 
@@ -41,16 +42,18 @@ export function ProductsTab() {
 
   return (
     <div className="grid grid-cols-[1fr_1.2fr] gap-4 h-full">
-      <div className="border rounded-lg bg-white flex flex-col overflow-hidden">
-        <div className="p-3 border-b space-y-2">
+      <div className="border border-border rounded-md bg-card shadow-card flex flex-col overflow-hidden">
+        <div className="p-3 border-b border-border space-y-2.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Danh sách ({filtered.length})</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Danh sách ({filtered.length})
+            </h3>
             <Button size="sm" onClick={handleAdd}>
               <Plus size={14} className="mr-1.5" /> Thêm
             </Button>
           </div>
           <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Tìm kiếm..."
               value={search}
@@ -61,11 +64,12 @@ export function ProductsTab() {
         </div>
         <div className="flex-1 overflow-auto">
           {isLoading ? (
-            <div className="p-4 text-sm text-center text-slate-500">Đang tải...</div>
+            <div className="p-4 text-sm text-center text-muted-foreground">Đang tải...</div>
           ) : (
             grouped.map((g) => (
               <div key={g.categoryName}>
-                <div className="px-3 py-1.5 text-xs font-semibold text-slate-600 uppercase bg-slate-50 border-b">
+                <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-secondary/60 border-y border-border">
+                  <span className={cn('w-2 h-2 rounded-full', getCategoryDot(g.categoryName))} />
                   {g.categoryName}
                 </div>
                 <ul>
@@ -78,14 +82,16 @@ export function ProductsTab() {
                           setIsNew(false);
                         }}
                         className={cn(
-                          'w-full text-left px-3 py-2 text-sm border-b hover:bg-slate-50 transition-colors',
-                          selectedId === p._id && 'bg-blue-50 text-blue-900 font-medium',
+                          'w-full text-left px-3 py-2 text-sm border-b border-border/50 hover:bg-secondary/40 transition-colors text-foreground',
+                          selectedId === p._id && 'bg-primary/5 text-primary font-medium',
                         )}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <span className="truncate">{p.name}</span>
                           {!p.isActive && (
-                            <span className="text-xs text-slate-400 ml-2">ngừng KD</span>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">
+                              ngừng KD
+                            </span>
                           )}
                         </div>
                       </button>
@@ -98,10 +104,28 @@ export function ProductsTab() {
         </div>
       </div>
 
-      <div className="border rounded-lg bg-white p-4 overflow-auto">
+      <div className="border border-border rounded-md bg-card shadow-card p-5 overflow-auto">
         {!selected && !isNew ? (
-          <div className="h-full flex items-center justify-center text-sm text-slate-500">
-            Chọn sản phẩm hoặc &quot;Thêm&quot; để bắt đầu
+          <div className="h-full flex flex-col items-center justify-center gap-3">
+            <svg
+              width="56"
+              height="56"
+              viewBox="0 0 56 56"
+              fill="none"
+              className="text-primary/30"
+              aria-hidden="true"
+            >
+              <rect x="8" y="14" width="40" height="32" rx="2" stroke="currentColor" strokeWidth="2" />
+              <line x1="8" y1="22" x2="48" y2="22" stroke="currentColor" strokeWidth="2" />
+              <circle cx="14" cy="18" r="1.2" fill="currentColor" />
+              <circle cx="18" cy="18" r="1.2" fill="currentColor" />
+            </svg>
+            <div className="text-center space-y-0.5">
+              <p className="text-sm font-medium text-foreground">Chưa chọn sản phẩm</p>
+              <p className="text-xs text-muted-foreground">
+                Chọn từ danh sách bên trái hoặc bấm &quot;Thêm&quot;
+              </p>
+            </div>
           </div>
         ) : (
           <ProductForm
