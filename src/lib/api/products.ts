@@ -21,6 +21,18 @@ export const productsApi = {
     const res = await apiClient.get('/products/categories');
     return res.data.data;
   },
+  async renameCategory(oldName: string, newName: string, newOrder: number) {
+    const res = await apiClient.patch('/products/categories/rename', {
+      oldName,
+      newName,
+      newOrder,
+    });
+    return res.data.data as { updated: number };
+  },
+  async deleteCategory(name: string) {
+    const res = await apiClient.delete(`/products/categories/${encodeURIComponent(name)}`);
+    return res.data.data as { deleted: number };
+  },
   async create(dto: {
     name: string;
     categoryName: string;
