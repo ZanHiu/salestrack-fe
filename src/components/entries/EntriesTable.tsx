@@ -14,11 +14,13 @@ import { getApiErrorMessage } from '@/lib/api/client';
 import { EntryCell, ViewMode } from './EntryCell';
 import { EntryDetailModal } from './EntryDetailModal';
 import { TableSkeleton } from '@/components/TableSkeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 interface EntriesTableProps {
   year: number;
   customerId: string;
   categoryFilter: string | null;
+  searchQuery: string;
   viewMode: ViewMode;
 }
 
@@ -39,6 +41,7 @@ export function EntriesTable({
   year,
   customerId,
   categoryFilter,
+  searchQuery,
   viewMode,
 }: EntriesTableProps) {
   const { data: productsData, isLoading: loadingProducts } = useProducts({
@@ -61,13 +64,14 @@ export function EntriesTable({
     [entries, productsData],
   );
 
-  const rows = useMemo(
-    () =>
-      categoryFilter
-        ? allRows.filter((r) => r.product.categoryName === categoryFilter)
-        : allRows,
-    [allRows, categoryFilter],
-  );
+  const rows = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return allRows.filter((r) => {
+      if (categoryFilter && r.product.categoryName !== categoryFilter) return false;
+      if (q && !r.product.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [allRows, categoryFilter, searchQuery]);
 
   const monthTotals = useMemo(() => {
     const totals: Record<number, { plan: number; actual: number }> = {};
@@ -146,9 +150,16 @@ export function EntriesTable({
 
   if (rows.length === 0) {
     return (
-      <div className="border border-border rounded-md bg-card p-12 text-center text-sm text-muted-foreground">
-        Không có sản phẩm nào.
-      </div>
+      <EmptyState
+        icon={
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <circle cx="28" cy="28" r="14" stroke="currentColor" strokeWidth="2" />
+            <line x1="38" y1="38" x2="50" y2="50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        }
+        title="Không có sản phẩm khớp"
+        description="Thử bỏ bộ lọc nhóm hoặc xóa từ khóa tìm kiếm"
+      />
     );
   }
 
