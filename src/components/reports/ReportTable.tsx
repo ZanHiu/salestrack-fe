@@ -11,6 +11,33 @@ import type {
 } from '@/types/domain';
 import { HeatmapCell, DisplayMode } from './HeatmapCell';
 import { TableSkeleton } from '@/components/TableSkeleton';
+import { EmptyState } from '@/components/EmptyState';
+
+function NoDataEmptyState({ year }: { year: number }) {
+  return (
+    <EmptyState
+      icon={
+        <svg
+          width="64"
+          height="64"
+          viewBox="0 0 64 64"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <rect x="8" y="14" width="48" height="42" rx="2" stroke="currentColor" strokeWidth="2" />
+          <line x1="8" y1="24" x2="56" y2="24" stroke="currentColor" strokeWidth="2" />
+          <line x1="18" y1="44" x2="18" y2="36" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="28" y1="44" x2="28" y2="30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="38" y1="44" x2="38" y2="34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="48" y1="44" x2="48" y2="28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      }
+      title={`Chưa có dữ liệu năm ${year}`}
+      description="Vào trang Nhập liệu để thêm dữ liệu, hoặc nhập từ Excel."
+    />
+  );
+}
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -50,11 +77,7 @@ function ProductTable({
     return <TableSkeleton rows={8} />;
   }
   if (!data || data.rows.length === 0) {
-    return (
-      <div className="p-8 text-center text-sm text-muted-foreground">
-        Không có dữ liệu năm {year}
-      </div>
-    );
+    return <NoDataEmptyState year={year} />;
   }
 
   return (
@@ -90,11 +113,7 @@ function CustomerTable({
     return <TableSkeleton rows={8} />;
   }
   if (!data || data.rows.length === 0) {
-    return (
-      <div className="p-8 text-center text-sm text-muted-foreground">
-        Không có dữ liệu năm {year}
-      </div>
-    );
+    return <NoDataEmptyState year={year} />;
   }
 
   return (
