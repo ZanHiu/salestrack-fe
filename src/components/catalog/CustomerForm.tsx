@@ -179,7 +179,7 @@ export function CustomerForm({ customer, isNew, onSaved, onCancelled }: Props) {
           <DialogHeader>
             <DialogTitle>Xác nhận xóa?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             Nếu khách hàng đã có dữ liệu, sẽ chuyển sang &quot;ngừng KD&quot;. Nếu chưa,
             sẽ xóa hẳn.
           </p>
