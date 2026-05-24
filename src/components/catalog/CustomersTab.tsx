@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCustomers } from '@/hooks/useCustomers';
 import { CustomerForm } from './CustomerForm';
+import { EmptyState } from '@/components/EmptyState';
 import type { Customer } from '@/types/domain';
 
 export function CustomersTab() {
@@ -91,25 +92,17 @@ export function CustomersTab() {
 
       <div className="border border-border rounded-md bg-card shadow-card p-5 overflow-auto">
         {!selected && !isNew ? (
-          <div className="h-full flex flex-col items-center justify-center gap-3">
-            <svg
-              width="56"
-              height="56"
-              viewBox="0 0 56 56"
-              fill="none"
-              className="text-primary/30"
-              aria-hidden="true"
-            >
-              <circle cx="28" cy="20" r="8" stroke="currentColor" strokeWidth="2" />
-              <path d="M10 46c0-9 8-16 18-16s18 7 18 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <div className="text-center space-y-0.5">
-              <p className="text-sm font-medium text-foreground">Chưa chọn khách hàng</p>
-              <p className="text-xs text-muted-foreground">
-                Chọn từ danh sách bên trái hoặc bấm &quot;Thêm&quot;
-              </p>
-            </div>
-          </div>
+          <EmptyState
+            card={false}
+            icon={
+              <svg width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+                <circle cx="28" cy="20" r="8" stroke="currentColor" strokeWidth="2" />
+                <path d="M10 46c0-9 8-16 18-16s18 7 18 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            }
+            title="Chưa chọn khách hàng"
+            description="Chọn từ danh sách bên trái hoặc bấm &quot;Thêm&quot;"
+          />
         ) : (
           <CustomerForm
             customer={selected}
