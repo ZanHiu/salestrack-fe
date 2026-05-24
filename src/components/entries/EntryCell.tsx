@@ -12,6 +12,7 @@ interface EntryCellProps {
   viewMode: ViewMode;
   isFocused: boolean;
   isSaving: boolean;
+  justSaved: boolean;
   onFocus: () => void;
   onCommit: (newValue: number) => void;
   onCancel: () => void;
@@ -20,10 +21,10 @@ interface EntryCellProps {
 }
 
 function heatmapClass(percent: number | null): string {
-  if (percent === null) return 'text-slate-400';
-  if (percent < 50) return 'bg-red-100 text-red-900';
-  if (percent < 90) return 'bg-amber-100 text-amber-900';
-  return 'bg-green-100 text-green-900';
+  if (percent === null) return 'text-muted-foreground';
+  if (percent < 50) return 'bg-heat-low-bg text-heat-low-text';
+  if (percent < 90) return 'bg-heat-mid-bg text-heat-mid-text';
+  return 'bg-heat-high-bg text-heat-high-text';
 }
 
 export function EntryCell({
@@ -31,6 +32,7 @@ export function EntryCell({
   viewMode,
   isFocused,
   isSaving,
+  justSaved,
   onFocus,
   onCommit,
   onCancel,
@@ -67,7 +69,7 @@ export function EntryCell({
     return (
       <div
         className={cn(
-          'h-9 px-2 flex items-center justify-end text-sm font-medium tabular-nums',
+          'h-9 px-2 flex items-center justify-end text-sm font-medium font-mono',
           heatmapClass(percent),
         )}
       >
@@ -83,8 +85,9 @@ export function EntryCell({
         type="button"
         onClick={onFocus}
         className={cn(
-          'h-9 w-full px-2 text-right text-sm tabular-nums hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors',
-          value === 0 ? 'text-slate-400' : 'text-slate-900',
+          'h-9 w-full px-2 text-right text-sm font-mono group-hover/row:bg-secondary/40 group-hover/col:bg-secondary/40 hover:!bg-primary/5 focus:!bg-primary/5 focus:outline-none transition-colors',
+          value === 0 ? 'text-muted-foreground' : 'text-foreground',
+          justSaved && 'animate-save-flash',
         )}
       >
         {display}
@@ -123,7 +126,7 @@ export function EntryCell({
             onKey('ArrowDown');
           }
         }}
-        className="w-full h-full px-2 pr-7 text-right text-sm tabular-nums bg-blue-50 border-2 border-blue-500 rounded-sm focus:outline-none"
+        className="w-full h-full px-2 pr-7 text-right text-sm font-mono bg-primary/5 border-2 border-primary rounded-sm focus:outline-none"
       />
       {onOpenDetail && (
         <button
@@ -132,14 +135,14 @@ export function EntryCell({
             e.preventDefault();
             onOpenDetail();
           }}
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
           aria-label="Thêm giá & số lượng"
         >
           <Settings size={12} />
         </button>
       )}
       {isSaving && (
-        <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-blue-500" />
+        <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-primary" />
       )}
     </div>
   );

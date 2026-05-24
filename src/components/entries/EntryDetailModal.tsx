@@ -106,8 +106,8 @@ export function EntryDetailModal({
             </div>
           </div>
 
-          <div className="rounded-md bg-slate-50 px-3 py-2 text-sm flex justify-between">
-            <span className="text-slate-600">Thành tiền (triệu VNĐ)</span>
+          <div className="rounded-md bg-secondary px-3 py-2 text-sm flex justify-between">
+            <span className="text-muted-foreground">Thành tiền (triệu VNĐ)</span>
             <span className="font-semibold tabular-nums">
               {computedActual === 0 ? '—' : formatMillion(computedActual)}
             </span>
