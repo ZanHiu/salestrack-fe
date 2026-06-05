@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { EmptyState } from '@/components/EmptyState';
+import { useIsAdmin } from '@/lib/auth/permissions';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EntriesFilters } from '@/components/entries/EntriesFilters';
 import { EntriesTable } from '@/components/entries/EntriesTable';
@@ -17,6 +18,7 @@ export default function EntriesPage() {
   const viewMode = usePrefs((s) => s.entriesViewMode);
   const patch = usePrefs((s) => s.patch);
   const [searchQuery, setSearchQuery] = useState('');
+  const isAdmin = useIsAdmin();
 
   const { updateUrl } = useUrlPrefSync({
     tab: { key: 'entriesViewMode', parse: (v) => v as EntriesViewMode },
@@ -67,7 +69,7 @@ export default function EntriesPage() {
               Bấm ô để nhập · Tab/Enter chuyển ô · Esc hủy
             </p>
           </div>
-          <BulkImportButton defaultYear={year} />
+          {isAdmin && <BulkImportButton defaultYear={year} />}
         </div>
 
         <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as EntriesViewMode)}>

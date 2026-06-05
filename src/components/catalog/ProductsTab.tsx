@@ -23,6 +23,7 @@ import {
   ConfirmDeleteCategoryDialog,
 } from './CategoryActions';
 import { EmptyState } from '@/components/EmptyState';
+import { useIsAdmin } from '@/lib/auth/permissions';
 import type { Product } from '@/types/domain';
 
 interface Group {
@@ -38,6 +39,7 @@ export function ProductsTab() {
   const [search, setSearch] = useState('');
   const [renameTarget, setRenameTarget] = useState<Group | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null);
+  const isAdmin = useIsAdmin();
 
   const { data, isLoading } = useProducts({});
   const products = data?.data ?? [];
@@ -101,9 +103,11 @@ export function ProductsTab() {
             <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Danh sách ({filtered.length})
             </h3>
-            <Button size="sm" onClick={handleAdd}>
-              <Plus size={14} className="mr-1.5" /> Thêm
-            </Button>
+            {isAdmin && (
+              <Button size="sm" onClick={handleAdd}>
+                <Plus size={14} className="mr-1.5" /> Thêm
+              </Button>
+            )}
           </div>
           <div className="relative">
             <Search
@@ -136,27 +140,29 @@ export function ProductsTab() {
                     />
                     <span className="truncate">{g.categoryName}</span>
                   </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      className="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="Tùy chọn nhóm"
-                    >
-                      <MoreVertical size={14} />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[160px]">
-                      <DropdownMenuItem onSelect={() => setRenameTarget(g)}>
-                        <Pencil size={14} className="mr-2" />
-                        Đổi tên nhóm
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => setDeleteTarget(g)}
-                        className="text-destructive focus:text-destructive"
+                  {isAdmin && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        className="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Tùy chọn nhóm"
                       >
-                        <Trash2 size={14} className="mr-2" />
-                        Xóa nhóm
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <MoreVertical size={14} />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[160px]">
+                        <DropdownMenuItem onSelect={() => setRenameTarget(g)}>
+                          <Pencil size={14} className="mr-2" />
+                          Đổi tên nhóm
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => setDeleteTarget(g)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 size={14} className="mr-2" />
+                          Xóa nhóm
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
                 <ul>
                   {g.rows.map((p) => (

@@ -28,6 +28,7 @@ import {
 import { productsApi } from '@/lib/api/products';
 import { useCategories } from '@/hooks/useProducts';
 import { getApiErrorMessage } from '@/lib/api/client';
+import { useIsAdmin } from '@/lib/auth/permissions';
 import type { Product, Category } from '@/types/domain';
 
 const schema = z.object({
@@ -54,6 +55,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [newCategoryOpen, setNewCategoryOpen] = useState(false);
+  const isAdmin = useIsAdmin();
 
   const {
     register,
@@ -167,7 +169,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="p-name">Tên sản phẩm *</Label>
-        <Input id="p-name" {...register('name')} autoFocus />
+        <Input id="p-name" {...register('name')} autoFocus disabled={!isAdmin} />
         {errors.name && (
           <p className="text-xs text-destructive">{errors.name.message}</p>
         )}
@@ -179,6 +181,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
           <Select
             key={categoryName /* force re-mount when value changes */}
             value={categoryName || undefined}
+            disabled={!isAdmin}
             onValueChange={(v) => {
               setValue('categoryName', v, { shouldValidate: true });
               const cat = selectableCategories.find((c) => c.name === v);
@@ -198,16 +201,18 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
                 ))}
             </SelectContent>
           </Select>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setNewCategoryOpen(true)}
-            aria-label="Thêm nhóm mới"
-            title="Thêm nhóm mới"
-          >
-            <Plus size={16} />
-          </Button>
+          {isAdmin && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setNewCategoryOpen(true)}
+              aria-label="Thêm nhóm mới"
+              title="Thêm nhóm mới"
+            >
+              <Plus size={16} />
+            </Button>
+          )}
         </div>
         {errors.categoryName && (
           <p className="text-xs text-destructive">{errors.categoryName.message}</p>
@@ -216,7 +221,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
 
       <div className="space-y-1.5">
         <Label htmlFor="unit">Đơn vị</Label>
-        <Input id="unit" placeholder="chai, kg..." {...register('unit')} />
+        <Input id="unit" placeholder="chai, kg..." {...register('unit')} disabled={!isAdmin} />
       </div>
 
       {!isNew && (
@@ -225,6 +230,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
             id="p-isActive"
             checked={isActive}
             onCheckedChange={(v) => setValue('isActive', !!v)}
+            disabled={!isAdmin}
           />
           <Label htmlFor="p-isActive" className="cursor-pointer">
             Đang bán
@@ -234,7 +240,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
 
       <div className="flex items-center justify-between pt-4 border-t">
         <div>
-          {!isNew && product && (
+          {isAdmin && !isNew && product && (
             <Button
               type="button"
               variant="destructive"
@@ -249,12 +255,14 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onCancelled} disabled={saving}>
-            Hủy
+            {isAdmin ? 'Hủy' : 'Đóng'}
           </Button>
-          <Button type="submit" disabled={saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Lưu
-          </Button>
+          {isAdmin && (
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Lưu
+            </Button>
+          )}
         </div>
       </div>
 

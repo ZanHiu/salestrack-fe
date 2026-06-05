@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { customersApi } from '@/lib/api/customers';
 import { getApiErrorMessage } from '@/lib/api/client';
+import { useIsAdmin } from '@/lib/auth/permissions';
 import type { Customer } from '@/types/domain';
 
 const schema = z.object({
@@ -43,6 +44,7 @@ export function CustomerForm({ customer, isNew, onSaved, onCancelled }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const isAdmin = useIsAdmin();
 
   const {
     register,
@@ -119,7 +121,7 @@ export function CustomerForm({ customer, isNew, onSaved, onCancelled }: Props) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="name">Tên khách hàng *</Label>
-        <Input id="name" {...register('name')} autoFocus />
+        <Input id="name" {...register('name')} autoFocus disabled={!isAdmin} />
         {errors.name && (
           <p className="text-xs text-destructive">{errors.name.message}</p>
         )}
@@ -127,12 +129,12 @@ export function CustomerForm({ customer, isNew, onSaved, onCancelled }: Props) {
 
       <div className="space-y-1.5">
         <Label htmlFor="phone">Số điện thoại</Label>
-        <Input id="phone" {...register('phone')} />
+        <Input id="phone" {...register('phone')} disabled={!isAdmin} />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="address">Địa chỉ</Label>
-        <Input id="address" {...register('address')} />
+        <Input id="address" {...register('address')} disabled={!isAdmin} />
       </div>
 
       {!isNew && (
@@ -141,6 +143,7 @@ export function CustomerForm({ customer, isNew, onSaved, onCancelled }: Props) {
             id="isActive"
             checked={isActive}
             onCheckedChange={(v) => setValue('isActive', !!v)}
+            disabled={!isAdmin}
           />
           <Label htmlFor="isActive" className="cursor-pointer">
             Đang kinh doanh
@@ -150,7 +153,7 @@ export function CustomerForm({ customer, isNew, onSaved, onCancelled }: Props) {
 
       <div className="flex items-center justify-between pt-4 border-t">
         <div>
-          {!isNew && customer && (
+          {isAdmin && !isNew && customer && (
             <Button
               type="button"
               variant="destructive"
@@ -165,12 +168,14 @@ export function CustomerForm({ customer, isNew, onSaved, onCancelled }: Props) {
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onCancelled} disabled={saving}>
-            Hủy
+            {isAdmin ? 'Hủy' : 'Đóng'}
           </Button>
-          <Button type="submit" disabled={saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Lưu
-          </Button>
+          {isAdmin && (
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Lưu
+            </Button>
+          )}
         </div>
       </div>
 

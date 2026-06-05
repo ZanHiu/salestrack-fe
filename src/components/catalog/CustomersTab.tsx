@@ -8,12 +8,14 @@ import { Input } from '@/components/ui/input';
 import { useCustomers } from '@/hooks/useCustomers';
 import { CustomerForm } from './CustomerForm';
 import { EmptyState } from '@/components/EmptyState';
+import { useIsAdmin } from '@/lib/auth/permissions';
 import type { Customer } from '@/types/domain';
 
 export function CustomersTab() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [search, setSearch] = useState('');
+  const isAdmin = useIsAdmin();
 
   const { data, isLoading } = useCustomers({ pageSize: 200 });
   const customers = data?.data ?? [];
@@ -43,9 +45,11 @@ export function CustomersTab() {
             <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Danh sách ({filtered.length})
             </h3>
-            <Button size="sm" onClick={handleAdd}>
-              <Plus size={14} className="mr-1.5" /> Thêm
-            </Button>
+            {isAdmin && (
+              <Button size="sm" onClick={handleAdd}>
+                <Plus size={14} className="mr-1.5" /> Thêm
+              </Button>
+            )}
           </div>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
