@@ -39,7 +39,7 @@ export default function LoginPage() {
     try {
       const { token, user } = await authApi.login(values.username, values.password);
       login(token, user);
-      router.replace('/entries');
+      router.replace('/dashboard');
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     } finally {
