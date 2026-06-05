@@ -31,7 +31,7 @@ export default function GlobalError({
         <div className="flex gap-2 justify-center">
           <Button
             variant="outline"
-            onClick={() => (window.location.href = '/entries')}
+            onClick={() => (window.location.href = '/dashboard')}
           >
             Về trang chủ
           </Button>
