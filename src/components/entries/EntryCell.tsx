@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, Settings } from 'lucide-react';
+import { Clock, Loader2, Settings } from 'lucide-react';
 import { cn, formatMillion, formatPercent } from '@/lib/utils';
 import type { PivotCell } from '@/hooks/useSalesEntries';
 
@@ -12,6 +12,7 @@ interface EntryCellProps {
   viewMode: ViewMode;
   isFocused: boolean;
   isSaving: boolean;
+  isPendingSync?: boolean;
   justSaved: boolean;
   onFocus: () => void;
   onCommit: (newValue: number) => void;
@@ -32,6 +33,7 @@ export function EntryCell({
   viewMode,
   isFocused,
   isSaving,
+  isPendingSync = false,
   justSaved,
   onFocus,
   onCommit,
@@ -85,11 +87,19 @@ export function EntryCell({
         type="button"
         onClick={onFocus}
         className={cn(
-          'h-9 w-full px-2 text-right text-sm font-mono group-hover/row:bg-secondary/40 group-hover/col:bg-secondary/40 hover:!bg-primary/5 focus:!bg-primary/5 focus:outline-none transition-colors',
+          'relative h-9 w-full px-2 text-right text-sm font-mono group-hover/row:bg-secondary/40 group-hover/col:bg-secondary/40 hover:!bg-primary/5 focus:!bg-primary/5 focus:outline-none transition-colors',
           value === 0 ? 'text-muted-foreground' : 'text-foreground',
           justSaved && 'animate-save-flash',
         )}
+        title={isPendingSync ? 'Đang chờ đồng bộ' : undefined}
       >
+        {isPendingSync && (
+          <Clock
+            size={10}
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 text-warning"
+            aria-label="Đang chờ đồng bộ"
+          />
+        )}
         {display}
       </button>
     );
@@ -128,20 +138,28 @@ export function EntryCell({
         }}
         className="w-full h-full px-2 pr-7 text-right text-sm font-mono bg-primary/5 border-2 border-primary rounded-sm focus:outline-none"
       />
-      {onOpenDetail && (
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onOpenDetail();
-          }}
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
-          aria-label="Thêm giá & số lượng"
-        >
-          <Settings size={12} />
-        </button>
+      {isPendingSync ? (
+        <Clock
+          size={12}
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-warning"
+          aria-label="Đang chờ đồng bộ"
+        />
+      ) : (
+        onOpenDetail && (
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onOpenDetail();
+            }}
+            className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+            aria-label="Thêm giá & số lượng"
+          >
+            <Settings size={12} />
+          </button>
+        )
       )}
-      {isSaving && (
+      {isSaving && !isPendingSync && (
         <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-primary" />
       )}
     </div>

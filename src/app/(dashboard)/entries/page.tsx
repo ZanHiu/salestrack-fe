@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useCustomers } from '@/hooks/useCustomers';
 import { EmptyState } from '@/components/EmptyState';
 import { useIsAdmin } from '@/lib/auth/permissions';
@@ -8,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EntriesFilters } from '@/components/entries/EntriesFilters';
 import { EntriesTable } from '@/components/entries/EntriesTable';
 import { BulkImportButton } from '@/components/entries/BulkImportButton';
+import { SyncStatus } from '@/components/SyncStatus';
 import { usePrefs, type EntriesViewMode } from '@/lib/prefs/usePrefs';
 import { useUrlPrefSync } from '@/lib/prefs/useUrlPrefSync';
 
@@ -19,6 +21,28 @@ export default function EntriesPage() {
   const patch = usePrefs((s) => s.patch);
   const [searchQuery, setSearchQuery] = useState('');
   const isAdmin = useIsAdmin();
+
+  // Deep-link highlight from /audit
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [highlight, setHighlight] = useState<{ productId: string; month: number } | null>(null);
+
+  useEffect(() => {
+    const raw = searchParams.get('highlight');
+    if (!raw) return;
+    const [pid, mStr] = raw.split(':');
+    const m = Number(mStr);
+    if (pid && Number.isFinite(m) && m >= 1 && m <= 12) {
+      setHighlight({ productId: pid, month: m });
+    }
+    // Clear the URL param so a manual reload doesn't re-trigger.
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('highlight');
+    const q = next.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { updateUrl } = useUrlPrefSync({
     tab: { key: 'entriesViewMode', parse: (v) => v as EntriesViewMode },
@@ -69,7 +93,10 @@ export default function EntriesPage() {
               Bấm ô để nhập · Tab/Enter chuyển ô · Esc hủy
             </p>
           </div>
-          {isAdmin && <BulkImportButton defaultYear={year} />}
+          <div className="flex items-center gap-3">
+            <SyncStatus />
+            {isAdmin && <BulkImportButton defaultYear={year} />}
+          </div>
         </div>
 
         <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as EntriesViewMode)}>
@@ -102,6 +129,8 @@ export default function EntriesPage() {
             categoryFilter={categoryFilter}
             searchQuery={searchQuery}
             viewMode={viewMode}
+            highlight={highlight}
+            onHighlightConsumed={() => setHighlight(null)}
           />
         )}
       </div>
