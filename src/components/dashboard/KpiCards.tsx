@@ -1,7 +1,7 @@
 'use client';
 
 import { Users, TrendingUp, Target, Crown, type LucideIcon } from 'lucide-react';
-import { cn, formatMillion } from '@/lib/utils';
+import { cn, formatAmountVN } from '@/lib/utils';
 import { useCustomerReport } from '@/hooks/useReports';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,9 +26,12 @@ export function KpiCards({ year }: Props) {
 
   const totalCustomers = customers?.meta.total ?? 0;
   const activeCustomers = customers?.data.filter((c) => c.isActive).length ?? 0;
-  const ytd = report.grandTotal.actual;
+  const ytd = formatAmountVN(report.grandTotal.actual);
   const completion = report.grandTotal.completionPercent;
   const topCustomer = report.rows[0];
+  const topCustomerAmount = topCustomer
+    ? formatAmountVN(topCustomer.yearTotal.actual)
+    : null;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -42,8 +45,8 @@ export function KpiCards({ year }: Props) {
       <KpiCard
         icon={TrendingUp}
         label={`YTD ${year}`}
-        value={billion(ytd)}
-        sub="triệu VNĐ"
+        value={ytd.value}
+        sub={ytd.unit}
         iconClass="bg-success-bg text-success"
       />
       <KpiCard
@@ -57,20 +60,12 @@ export function KpiCards({ year }: Props) {
         icon={Crown}
         label="Khách hàng top"
         value={topCustomer?.customer.name ?? '—'}
-        sub={topCustomer ? `${billion(topCustomer.yearTotal.actual)} triệu` : ''}
+        sub={topCustomerAmount ? `${topCustomerAmount.value} ${topCustomerAmount.unit}` : ''}
         iconClass="bg-brand-orange/10 text-brand-orange"
         smallValue
       />
     </div>
   );
-}
-
-function billion(million: number): string {
-  if (million === 0) return '0';
-  if (million >= 1000) {
-    return `${(million / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tỷ`;
-  }
-  return formatMillion(million);
 }
 
 interface KpiCardProps {
