@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Plus, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Loader2, Plus, Search, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,8 +58,23 @@ export default function UsersPage() {
   const currentUser = useAuth((s) => s.user);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<UserAdmin | null>(null);
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'staff'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [search, setSearch] = useState('');
 
   const { data: users, isLoading } = useUsers();
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (users ?? []).filter((u) => {
+      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (statusFilter === 'active' && !u.isActive) return false;
+      if (statusFilter === 'inactive' && u.isActive) return false;
+      if (q && !u.fullName.toLowerCase().includes(q) && !u.username.toLowerCase().includes(q))
+        return false;
+      return true;
+    });
+  }, [users, roleFilter, statusFilter, search]);
 
   // Guard: redirect non-admin to /entries
   useEffect(() => {
@@ -72,9 +87,9 @@ export default function UsersPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-8 pt-7 pb-5 space-y-0.5 border-b border-border bg-background">
+      <div className="px-8 pt-7 pb-5 space-y-5 border-b border-border bg-background">
         <div className="flex items-end justify-between gap-4">
-          <div>
+          <div className="space-y-0.5">
             <h2 className="font-heading font-semibold text-2xl text-foreground leading-tight">
               Quản lý người dùng
             </h2>
@@ -85,6 +100,68 @@ export default function UsersPage() {
           <Button onClick={() => setCreateOpen(true)}>
             <Plus size={14} className="mr-1.5" /> Thêm
           </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="w-[180px]">
+            <label className="text-xs text-muted-foreground mb-1 block font-medium">
+              Vai trò
+            </label>
+            <Select
+              value={roleFilter}
+              onValueChange={(v) => setRoleFilter(v as 'all' | 'admin' | 'staff')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="admin">Quản trị</SelectItem>
+                <SelectItem value="staff">Nhân viên</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-[180px]">
+            <label className="text-xs text-muted-foreground mb-1 block font-medium">
+              Trạng thái
+            </label>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'inactive')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="active">Đang hoạt động</SelectItem>
+                <SelectItem value="inactive">Vô hiệu hóa</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-xs text-muted-foreground mb-1 block font-medium">
+              Tìm kiếm
+            </label>
+            <div className="relative">
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                placeholder="Họ tên hoặc tài khoản..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            {filteredUsers.length.toLocaleString('vi-VN')} / {(users ?? []).length} người dùng
+          </div>
         </div>
       </div>
 
@@ -107,14 +184,16 @@ export default function UsersPage() {
                     Đang tải...
                   </td>
                 </tr>
-              ) : (users ?? []).length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-6 text-center text-muted-foreground">
-                    Chưa có người dùng nào
+                    {(users ?? []).length === 0
+                      ? 'Chưa có người dùng nào'
+                      : 'Không khớp với bộ lọc'}
                   </td>
                 </tr>
               ) : (
-                (users ?? []).map((u) => (
+                filteredUsers.map((u) => (
                   <tr key={u._id} className="border-t border-border/50 hover:bg-secondary/30">
                     <Td>
                       <span className="font-medium">{u.username}</span>
