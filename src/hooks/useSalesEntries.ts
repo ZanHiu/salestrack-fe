@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useMutationState,
+} from '@tanstack/react-query';
 import { salesEntriesApi, UpsertEntryDto, ListEntriesParams } from '@/lib/api/salesEntries';
 import type { SalesEntry, Product } from '@/types/domain';
 
@@ -34,13 +39,81 @@ export function useEntriesList(params: ListEntriesParams, enabled = true) {
   });
 }
 
+function upsertEntryKey(year: number, customerId: string | null) {
+  return ['upsert-entry', year, customerId] as const;
+}
+
 export function useUpsertEntry(year: number, customerId: string | null) {
   const queryClient = useQueryClient();
+  const queryKey = ['entries', year, customerId];
+
   return useMutation({
+    mutationKey: upsertEntryKey(year, customerId),
     mutationFn: (dto: UpsertEntryDto) => salesEntriesApi.upsert(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['entries', year, customerId] });
+    onMutate: async (dto) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<SalesEntry[]>(queryKey);
+      queryClient.setQueryData<SalesEntry[]>(queryKey, (old) => {
+        const list = old ?? [];
+        const idx = list.findIndex(
+          (e) => e.productId === dto.productId && e.month === dto.month,
+        );
+        if (idx >= 0) {
+          const next = [...list];
+          next[idx] = {
+            ...next[idx],
+            ...(dto.planAmount !== undefined && { planAmount: dto.planAmount }),
+            ...(dto.actualAmount !== undefined && { actualAmount: dto.actualAmount }),
+            ...(dto.unitPrice !== undefined && { unitPrice: dto.unitPrice }),
+            ...(dto.quantity !== undefined && { quantity: dto.quantity }),
+            ...(dto.note !== undefined && { note: dto.note }),
+          };
+          return next;
+        }
+        // Inserting a new entry that hasn't been saved yet.
+        // Customer/product subdocs are populated server-side; placeholder is enough for UI.
+        return [
+          ...list,
+          {
+            id: `tmp-${dto.productId}-${dto.month}`,
+            year: dto.year,
+            month: dto.month,
+            customerId: dto.customerId,
+            productId: dto.productId,
+            planAmount: dto.planAmount ?? 0,
+            actualAmount: dto.actualAmount ?? 0,
+            unitPrice: dto.unitPrice,
+            quantity: dto.quantity,
+            note: dto.note,
+          } as SalesEntry,
+        ];
+      });
+      return { previous };
     },
+    onError: (err, _dto, ctx) => {
+      const isNetworkError =
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        (err as { code?: string })?.code === 'ERR_NETWORK';
+      if (!isNetworkError && ctx?.previous) {
+        queryClient.setQueryData(queryKey, ctx.previous);
+      }
+    },
+    onSettled: (_data, error) => {
+      const isNetworkError =
+        error &&
+        ((typeof navigator !== 'undefined' && !navigator.onLine) ||
+          (error as { code?: string })?.code === 'ERR_NETWORK');
+      if (!isNetworkError) {
+        queryClient.invalidateQueries({ queryKey });
+      }
+    },
+  });
+}
+
+export function usePendingCells(year: number, customerId: string | null) {
+  return useMutationState({
+    filters: { mutationKey: upsertEntryKey(year, customerId), status: 'pending' },
+    select: (m) => m.state.variables as UpsertEntryDto,
   });
 }
 
