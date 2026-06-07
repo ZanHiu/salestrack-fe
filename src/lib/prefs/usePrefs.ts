@@ -24,6 +24,9 @@ interface PrefsState {
   // /catalog
   catalogTab: CatalogTab;
 
+  // Layout
+  sidebarCollapsed: boolean;
+
   // Generic patcher
   patch: (p: Partial<Omit<PrefsState, 'patch'>>) => void;
 }
@@ -40,6 +43,7 @@ export const usePrefs = create<PrefsState>()(
       reportsType: 'by-customer',
       reportsDisplayMode: 'actual',
       catalogTab: 'products',
+      sidebarCollapsed: false,
       patch: (p) => set(p),
     }),
     {
