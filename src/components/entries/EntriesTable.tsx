@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { cn, formatMillion } from '@/lib/utils';
 import { useProducts } from '@/hooks/useProducts';
 import {
   useEntriesByCustomer,
   useUpsertEntry,
+  usePendingCells,
   transformToPivot,
   PivotRow,
 } from '@/hooks/useSalesEntries';
@@ -22,6 +23,8 @@ interface EntriesTableProps {
   categoryFilter: string | null;
   searchQuery: string;
   viewMode: ViewMode;
+  highlight?: { productId: string; month: number } | null;
+  onHighlightConsumed?: () => void;
 }
 
 interface FocusCoord {
@@ -43,6 +46,8 @@ export function EntriesTable({
   categoryFilter,
   searchQuery,
   viewMode,
+  highlight,
+  onHighlightConsumed,
 }: EntriesTableProps) {
   const { data: productsData, isLoading: loadingProducts } = useProducts({
     isActive: true,
@@ -52,6 +57,11 @@ export function EntriesTable({
     customerId,
   );
   const upsert = useUpsertEntry(year, customerId);
+  const pendingDtos = usePendingCells(year, customerId);
+  const pendingKeys = useMemo(
+    () => new Set(pendingDtos.filter(Boolean).map((d) => `${d.productId}:${d.month}`)),
+    [pendingDtos],
+  );
 
   const [focus, setFocus] = useState<FocusCoord | null>(null);
   const [hoverCol, setHoverCol] = useState<number | null>(null);
@@ -118,6 +128,34 @@ export function EntriesTable({
       },
     );
   }
+
+  // Handle deep-link highlight from /audit
+  useEffect(() => {
+    if (!highlight) return;
+    if (loadingProducts || loadingEntries) return;
+
+    const rowExists = rows.some((r) => r.product._id === highlight.productId);
+    if (!rowExists) {
+      toast.warning('Sản phẩm trong nhật ký không còn hiển thị (có thể đã ngừng KD)');
+      onHighlightConsumed?.();
+      return;
+    }
+
+    const key = `${highlight.productId}:${highlight.month}`;
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-cell-key="${key}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+      setJustSavedKey(key);
+      const t = setTimeout(() => {
+        setJustSavedKey(null);
+        onHighlightConsumed?.();
+      }, 1500);
+      return () => clearTimeout(t);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlight, rows.length, loadingProducts, loadingEntries]);
 
   function moveFocus(direction: 'Enter' | 'Tab' | 'ShiftTab' | 'ArrowUp' | 'ArrowDown') {
     if (!focus) return;
@@ -188,7 +226,7 @@ export function EntriesTable({
                 <th
                   key={qi}
                   colSpan={q.span}
-                  className="px-2 py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground border-b border-border"
+                  className="bg-brand-cream-warm px-2 pt-1.5 pb-0 text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
                 >
                   {q.label}
                 </th>
@@ -208,11 +246,12 @@ export function EntriesTable({
                   onMouseEnter={() => setHoverCol(m)}
                   onMouseLeave={() => setHoverCol(null)}
                   className={cn(
-                    'px-2 py-1.5 text-right font-mono font-medium text-foreground/80 w-[68px] border-b border-border transition-colors',
-                    hoverCol === m && 'bg-primary/10',
+                    'relative bg-brand-cream-warm px-2 py-1.5 text-right font-mono font-medium text-foreground/80 w-[68px] border-b border-border',
+                    'before:pointer-events-none before:absolute before:inset-0 before:bg-primary/10 before:opacity-0 before:transition-opacity',
+                    hoverCol === m && 'before:opacity-100',
                   )}
                 >
-                  T{m}
+                  <span className="relative">T{m}</span>
                 </th>
               ))}
             </tr>
@@ -229,6 +268,7 @@ export function EntriesTable({
                 setFocus={setFocus}
                 savingKey={savingKey}
                 justSavedKey={justSavedKey}
+                pendingKeys={pendingKeys}
                 onCommit={commit}
                 onCancel={() => setFocus(null)}
                 onKey={moveFocus}
@@ -247,11 +287,12 @@ export function EntriesTable({
                   <td
                     key={m}
                     className={cn(
-                      'sticky bottom-0 z-20 bg-brand-cream-warm px-2 py-2.5 text-right font-mono border-t-2 border-border transition-colors',
-                      hoverCol === m && 'bg-primary/10',
+                      'sticky bottom-0 z-20 bg-brand-cream-warm px-2 py-2.5 text-right font-mono border-t-2 border-border',
+                      'before:pointer-events-none before:absolute before:inset-0 before:bg-primary/10 before:opacity-0 before:transition-opacity',
+                      hoverCol === m && 'before:opacity-100',
                     )}
                   >
-                    {v === 0 ? '—' : formatMillion(v)}
+                    <span className="relative">{v === 0 ? '—' : formatMillion(v)}</span>
                   </td>
                 );
               })}
@@ -288,6 +329,7 @@ interface GroupRowsProps {
   setFocus: (f: FocusCoord | null) => void;
   savingKey: string | null;
   justSavedKey: string | null;
+  pendingKeys: Set<string>;
   onCommit: (productId: string, month: number, value: number) => void;
   onCancel: () => void;
   onKey: (key: 'Enter' | 'Tab' | 'ShiftTab' | 'ArrowUp' | 'ArrowDown') => void;
@@ -303,6 +345,7 @@ function GroupRows({
   setFocus,
   savingKey,
   justSavedKey,
+  pendingKeys,
   onCommit,
   onCancel,
   onKey,
@@ -345,6 +388,7 @@ function GroupRows({
               return (
                 <td
                   key={m}
+                  data-cell-key={key}
                   onMouseEnter={() => setHoverCol(m)}
                   onMouseLeave={() => setHoverCol(null)}
                   className={cn(
@@ -357,6 +401,7 @@ function GroupRows({
                     viewMode={viewMode}
                     isFocused={isFocused}
                     isSaving={savingKey === key}
+                    isPendingSync={pendingKeys.has(key)}
                     justSaved={justSavedKey === key}
                     onFocus={() => setFocus({ productId: r.product._id, month: m })}
                     onCommit={(v) => {

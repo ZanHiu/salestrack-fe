@@ -148,7 +148,7 @@ function TableShell({
               {labelCol}
             </th>
             {MONTHS.map((m) => (
-              <th key={m} className="px-2 py-2 text-right font-mono font-medium text-foreground/80 w-[68px] border-b border-border">
+              <th key={m} className="bg-brand-cream-warm px-2 py-2 text-right font-mono font-medium text-foreground/80 w-[68px] border-b border-border">
                 T{m}
               </th>
             ))}
