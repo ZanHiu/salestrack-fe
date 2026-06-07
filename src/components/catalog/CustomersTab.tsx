@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,9 @@ import { useIsAdmin } from '@/lib/auth/permissions';
 import type { Customer } from '@/types/domain';
 
 export function CustomersTab() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [search, setSearch] = useState('');
@@ -19,6 +23,22 @@ export function CustomersTab() {
 
   const { data, isLoading } = useCustomers({ pageSize: 200 });
   const customers = data?.data ?? [];
+
+  // Deep-link select from /audit
+  useEffect(() => {
+    const sel = searchParams.get('select');
+    if (!sel || customers.length === 0) return;
+    const exists = customers.some((c) => c._id === sel);
+    if (exists) {
+      setSelectedId(sel);
+      setIsNew(false);
+    }
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('select');
+    const q = next.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customers.length]);
 
   const filtered = useMemo(() => {
     if (!search) return customers;

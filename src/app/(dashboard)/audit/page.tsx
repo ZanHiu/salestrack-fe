@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatDistanceToNow, format } from 'date-fns';
+import { format, isToday, isYesterday, isSameYear } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -45,6 +46,31 @@ const RESOURCE_LABEL: Record<AuditResource, string> = {
   auth: 'Đăng nhập',
 };
 
+function formatGroupLabel(date: Date): string {
+  if (isToday(date)) return 'Hôm nay';
+  if (isYesterday(date)) return 'Hôm qua';
+  const now = new Date();
+  if (isSameYear(date, now)) {
+    return format(date, 'EEEE, dd/MM', { locale: vi });
+  }
+  return format(date, 'EEEE, dd/MM/yyyy', { locale: vi });
+}
+
+function groupByDate(entries: AuditEntry[]): { label: string; key: string; entries: AuditEntry[] }[] {
+  const groups: { label: string; key: string; entries: AuditEntry[] }[] = [];
+  for (const e of entries) {
+    const d = new Date(e.createdAt);
+    const key = format(d, 'yyyy-MM-dd');
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.entries.push(e);
+    } else {
+      groups.push({ key, label: formatGroupLabel(d), entries: [e] });
+    }
+  }
+  return groups;
+}
+
 const ACTION_BADGE: Record<AuditAction, string> = {
   create: 'bg-success-bg text-success',
   update: 'bg-primary/10 text-primary',
@@ -65,6 +91,14 @@ export default function AuditPage() {
   const [action, setAction] = useState<AuditAction | 'all'>('all');
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<AuditEntry | null>(null);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  function toggleGroup(key: string, defaultCollapsed: boolean) {
+    setCollapsed((prev) => {
+      const isCurrentlyCollapsed = prev[key] ?? defaultCollapsed;
+      return { ...prev, [key]: !isCurrentlyCollapsed };
+    });
+  }
 
   useEffect(() => {
     if (currentUser && currentUser.role !== 'admin') {
@@ -83,6 +117,8 @@ export default function AuditPage() {
   useEffect(() => {
     setPage(1);
   }, [resource, action]);
+
+  const grouped = useMemo(() => groupByDate(data?.data ?? []), [data]);
 
   if (!currentUser || currentUser.role !== 'admin') return null;
 
@@ -188,71 +224,32 @@ export default function AuditPage() {
                     Đang tải...
                   </td>
                 </tr>
-              ) : (data?.data ?? []).length === 0 ? (
+              ) : grouped.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-6 text-center text-muted-foreground">
                     Không có bản ghi
                   </td>
                 </tr>
               ) : (
-                (data?.data ?? []).map((entry) => (
-                  <tr
-                    key={entry._id}
-                    className="border-t border-border/50 hover:bg-secondary/30"
-                  >
-                    <td
-                      className="px-4 py-2.5 text-xs text-muted-foreground"
-                      title={format(new Date(entry.createdAt), 'dd/MM/yyyy HH:mm:ss')}
-                    >
-                      {formatDistanceToNow(new Date(entry.createdAt), {
-                        addSuffix: true,
-                        locale: vi,
-                      })}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="text-foreground">{entry.userFullName}</div>
-                      <div className="text-[11px] text-muted-foreground capitalize">
-                        {entry.userRole}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className={cn(
-                          'inline-flex px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wider',
-                          ACTION_BADGE[entry.action],
-                        )}
-                      >
-                        {ACTION_LABEL[entry.action]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">
-                      {RESOURCE_LABEL[entry.resource]}
-                    </td>
-                    <td className="px-4 py-2.5 text-foreground truncate max-w-md">
-                      {entry.resourceLabel || (
-                        <span className="text-muted-foreground italic">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      {(entry.changes?.length ?? 0) > 0 ||
-                      (entry.metadata && Object.keys(entry.metadata).length > 0) ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDetail(entry)}
-                        >
-                          Xem
-                        </Button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))
+                grouped.map((group) => {
+                  const defaultCollapsed = false; // expand all by default
+                  const isCollapsed = collapsed[group.key] ?? defaultCollapsed;
+                  return (
+                    <GroupRows
+                      key={group.key}
+                      group={group}
+                      isCollapsed={isCollapsed}
+                      onToggle={() => toggleGroup(group.key, defaultCollapsed)}
+                      onSelectDetail={setDetail}
+                    />
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {total > 0 && (
           <div className="flex items-center justify-between mt-3 text-sm">
             <span className="text-muted-foreground">
               Trang {page} / {totalPages}
@@ -281,6 +278,136 @@ export default function AuditPage() {
 
       <AuditDetailDialog entry={detail} onOpenChange={(o) => !o && setDetail(null)} />
     </div>
+  );
+}
+
+function buildDeepLink(entry: AuditEntry): string | null {
+  // sales-entry → /entries with customer/year/highlight
+  if (entry.resource === 'sales-entry' && entry.metadata) {
+    const m = entry.metadata as Record<string, unknown>;
+    const year = m.year;
+    const month = m.month;
+    const customerId = m.customerId;
+    const productId = m.productId;
+    if (year && month && customerId && productId) {
+      return `/entries?customer=${customerId}&year=${year}&highlight=${productId}:${month}`;
+    }
+  }
+  // customer → /catalog?tab=customers&select=<id>
+  if (entry.resource === 'customer' && entry.resourceId) {
+    return `/catalog?tab=customers&select=${entry.resourceId}`;
+  }
+  // product → /catalog?tab=products&select=<id>
+  if (entry.resource === 'product' && entry.resourceId) {
+    return `/catalog?tab=products&select=${entry.resourceId}`;
+  }
+  return null;
+}
+
+function GroupRows({
+  group,
+  isCollapsed,
+  onToggle,
+  onSelectDetail,
+}: {
+  group: { label: string; key: string; entries: AuditEntry[] };
+  isCollapsed: boolean;
+  onToggle: () => void;
+  onSelectDetail: (e: AuditEntry) => void;
+}) {
+  const router = useRouter();
+  const dateObj = new Date(group.entries[0].createdAt);
+  return (
+    <>
+      <tr className="bg-secondary/60">
+        <td colSpan={6} className="p-0 border-y border-border">
+          <button
+            type="button"
+            onClick={onToggle}
+            className="w-full px-4 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:bg-secondary transition-colors text-left"
+            aria-expanded={!isCollapsed}
+          >
+            {isCollapsed ? (
+              <ChevronRight size={14} className="shrink-0" />
+            ) : (
+              <ChevronDown size={14} className="shrink-0" />
+            )}
+            <span className="text-foreground">{group.label}</span>
+            <span className="opacity-60">
+              · {format(dateObj, 'dd/MM/yyyy')} · {group.entries.length} bản ghi
+            </span>
+          </button>
+        </td>
+      </tr>
+      {!isCollapsed && group.entries.map((entry) => {
+        const d = new Date(entry.createdAt);
+        const hasDetail =
+          (entry.changes?.length ?? 0) > 0 ||
+          (entry.metadata && Object.keys(entry.metadata).length > 0);
+        const deepLink = buildDeepLink(entry);
+        return (
+          <tr
+            key={entry._id}
+            className="border-t border-border/50 hover:bg-secondary/30"
+          >
+            <td
+              className="px-4 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap"
+              title={format(d, 'dd/MM/yyyy HH:mm:ss')}
+            >
+              {format(d, 'HH:mm:ss')}
+            </td>
+            <td className="px-4 py-2.5">
+              <div className="text-foreground">{entry.userFullName}</div>
+              <div className="text-[11px] text-muted-foreground capitalize">
+                {entry.userRole}
+              </div>
+            </td>
+            <td className="px-4 py-2.5">
+              <span
+                className={cn(
+                  'inline-flex px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wider',
+                  ACTION_BADGE[entry.action],
+                )}
+              >
+                {ACTION_LABEL[entry.action]}
+              </span>
+            </td>
+            <td className="px-4 py-2.5 text-muted-foreground">
+              {RESOURCE_LABEL[entry.resource]}
+            </td>
+            <td className="px-4 py-2.5 truncate max-w-md">
+              {entry.resourceLabel ? (
+                deepLink ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push(deepLink)}
+                    className="text-primary hover:underline truncate text-left"
+                    title="Mở đối tượng này"
+                  >
+                    {entry.resourceLabel}
+                  </button>
+                ) : (
+                  <span className="text-foreground">{entry.resourceLabel}</span>
+                )
+              ) : (
+                <span className="text-muted-foreground italic">—</span>
+              )}
+            </td>
+            <td className="px-4 py-2.5 text-right">
+              {hasDetail ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onSelectDetail(entry)}
+                >
+                  Xem
+                </Button>
+              ) : null}
+            </td>
+          </tr>
+        );
+      })}
+    </>
   );
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { MoreVertical, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,6 +35,9 @@ interface Group {
 
 export function ProductsTab() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [search, setSearch] = useState('');
@@ -43,6 +47,22 @@ export function ProductsTab() {
 
   const { data, isLoading } = useProducts({});
   const products = data?.data ?? [];
+
+  // Deep-link select from /audit
+  useEffect(() => {
+    const sel = searchParams.get('select');
+    if (!sel || products.length === 0) return;
+    const exists = products.some((p) => p._id === sel);
+    if (exists) {
+      setSelectedId(sel);
+      setIsNew(false);
+    }
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('select');
+    const q = next.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products.length]);
 
   const filtered = useMemo(() => {
     if (!search) return products;
