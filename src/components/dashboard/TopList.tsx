@@ -1,6 +1,6 @@
 'use client';
 
-import { formatMillion } from '@/lib/utils';
+import { formatAmountVN } from '@/lib/utils';
 
 interface TopItem {
   id: string;
@@ -46,7 +46,10 @@ export function TopList({ title, items, emptyText = 'Chưa có dữ liệu', isL
                     </span>
                   </div>
                   <span className="text-sm font-mono tabular-nums text-foreground shrink-0">
-                    {formatMillion(item.value)}
+                    {(() => {
+                      const a = formatAmountVN(item.value);
+                      return `${a.value} ${a.unit === 'tỷ VNĐ' ? 'tỷ' : 'tr'}`;
+                    })()}
                   </span>
                 </div>
                 <div className="ml-6 h-1.5 bg-secondary rounded-full overflow-hidden">
