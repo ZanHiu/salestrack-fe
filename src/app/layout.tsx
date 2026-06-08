@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Be_Vietnam_Pro, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
@@ -26,6 +26,18 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'SalesTrack — Sổ doanh số của Hợp',
   description: 'Quản lý doanh số 20 đại lý × 37 sản phẩm × 12 tháng',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SalesTrack',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#1B4332',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
