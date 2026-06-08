@@ -1,25 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useMutationState, useQueryClient } from '@tanstack/react-query';
 import { CloudOff, Clock, RefreshCw } from 'lucide-react';
-
-function useOnlineStatus() {
-  const [online, setOnline] = useState(
-    typeof navigator === 'undefined' ? true : navigator.onLine,
-  );
-  useEffect(() => {
-    const on = () => setOnline(true);
-    const off = () => setOnline(false);
-    window.addEventListener('online', on);
-    window.addEventListener('offline', off);
-    return () => {
-      window.removeEventListener('online', on);
-      window.removeEventListener('offline', off);
-    };
-  }, []);
-  return online;
-}
+import { useOnlineStatus } from '@/lib/hooks/useOnlineStatus';
 
 export function SyncStatus() {
   const online = useOnlineStatus();

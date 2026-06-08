@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EntriesFilters } from '@/components/entries/EntriesFilters';
 import { EntriesTable } from '@/components/entries/EntriesTable';
 import { BulkImportButton } from '@/components/entries/BulkImportButton';
+import { PrefetchOfflineButton } from '@/components/entries/PrefetchOfflineButton';
 import { SyncStatus } from '@/components/SyncStatus';
 import { usePrefs, type EntriesViewMode } from '@/lib/prefs/usePrefs';
 import { useUrlPrefSync } from '@/lib/prefs/useUrlPrefSync';
@@ -95,6 +96,7 @@ export default function EntriesPage() {
           </div>
           <div className="flex items-center gap-3">
             <SyncStatus />
+            <PrefetchOfflineButton year={year} />
             {isAdmin && <BulkImportButton defaultYear={year} />}
           </div>
         </div>
