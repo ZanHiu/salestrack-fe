@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { salesEntriesApi } from '@/lib/api/salesEntries';
 import { getApiErrorMessage } from '@/lib/api/client';
-import { formatVND, formatMillion, parseNumberInput } from '@/lib/utils';
+import { formatVND } from '@/lib/utils';
 import type { Product } from '@/types/domain';
 import type { PivotCell } from '@/hooks/useSalesEntries';
 
@@ -32,6 +33,17 @@ interface Props {
   cell?: PivotCell;
 }
 
+function parseDecimalInput(value: string): number | null {
+  const normalized = value.trim().replace(/\s/g, '').replace(',', '.');
+  if (!normalized || !/^\d*(?:\.\d*)?$/.test(normalized)) return null;
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+}
+
+function formatEditableNumber(value: number, maximumFractionDigits = 6): string {
+  return String(Number(value.toFixed(maximumFractionDigits)));
+}
+
 export function EntryDetailModal({
   open,
   onOpenChange,
@@ -42,19 +54,48 @@ export function EntryDetailModal({
   product,
   cell,
 }: Props) {
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [quantity, setQuantity] = useState(String(cell?.quantity ?? ''));
-  const [unitPrice, setUnitPrice] = useState(
-    cell?.unitPrice ? formatVND(cell.unitPrice) : '',
+  const appliedUnitPrice = product?.unitPrice;
+  const existingActual = cell?.actual ?? 0;
+  const quantityFromCurrentPrice =
+    existingActual > 0 && appliedUnitPrice
+      ? (existingActual * 1_000_000) / appliedUnitPrice
+      : undefined;
+
+  const [quantity, setQuantity] = useState(
+    quantityFromCurrentPrice !== undefined
+      ? formatEditableNumber(quantityFromCurrentPrice)
+      : cell?.quantity !== undefined
+        ? formatEditableNumber(cell.quantity)
+        : '',
   );
+  const [calculatedActual, setCalculatedActual] = useState(existingActual);
   const [note, setNote] = useState(cell?.note ?? '');
   const [saving, setSaving] = useState(false);
 
-  const q = parseNumberInput(quantity);
-  const p = parseNumberInput(unitPrice);
-  const computedActual = q && p ? Math.round((q * p) / 1_000_000 * 100) / 100 : 0;
+  function handleQuantityChange(value: string) {
+    setQuantity(value);
+    const parsedQuantity = parseDecimalInput(value);
+    if (parsedQuantity === null) return;
+    if (appliedUnitPrice && appliedUnitPrice > 0) {
+      const nextActual = (parsedQuantity * appliedUnitPrice) / 1_000_000;
+      setCalculatedActual(Number(nextActual.toFixed(2)));
+    }
+  }
 
   async function handleSave() {
+    const parsedQuantity = parseDecimalInput(quantity);
+
+    if (quantity.trim() && parsedQuantity === null) {
+      toast.error('Số lượng không hợp lệ');
+      return;
+    }
+    if ((parsedQuantity ?? 0) > 0 && !appliedUnitPrice) {
+      toast.error('Sản phẩm chưa có đơn giá. Hãy cập nhật trong Danh mục trước.');
+      return;
+    }
+
     setSaving(true);
     try {
       await salesEntriesApi.upsert({
@@ -62,8 +103,9 @@ export function EntryDetailModal({
         month,
         customerId,
         productId,
-        quantity: q || undefined,
-        unitPrice: p || undefined,
+        ...(calculatedActual > 0 && { actualAmount: calculatedActual }),
+        ...(parsedQuantity !== null && { quantity: parsedQuantity }),
+        ...(appliedUnitPrice !== undefined && { unitPrice: appliedUnitPrice }),
         note: note.trim() || undefined,
       });
       queryClient.invalidateQueries({ queryKey: ['entries', year, customerId] });
@@ -91,7 +133,7 @@ export function EntryDetailModal({
                 id="qty"
                 inputMode="decimal"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => handleQuantityChange(e.target.value)}
                 autoFocus
               />
             </div>
@@ -99,9 +141,11 @@ export function EntryDetailModal({
               <Label htmlFor="price">Đơn giá (VNĐ)</Label>
               <Input
                 id="price"
-                inputMode="decimal"
-                value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
+                value={appliedUnitPrice ? formatVND(appliedUnitPrice) : ''}
+                placeholder="Chưa có đơn giá"
+                readOnly
+                className="bg-secondary/60"
+                title="Đơn giá hiện tại trong Danh mục"
               />
             </div>
           </div>
@@ -109,9 +153,35 @@ export function EntryDetailModal({
           <div className="rounded-md bg-secondary px-3 py-2 text-sm flex justify-between">
             <span className="text-muted-foreground">Thành tiền (triệu VNĐ)</span>
             <span className="font-semibold tabular-nums">
-              {computedActual === 0 ? '—' : formatMillion(computedActual)}
+              {calculatedActual === 0 ? '—' : formatEditableNumber(calculatedActual, 2)}
             </span>
           </div>
+
+          {appliedUnitPrice ? (
+            <p className="text-[11px] text-muted-foreground">
+              {existingActual > 0
+                ? 'Số lượng được tính từ thành tiền đã nhập trên bảng và đơn giá hiện tại.'
+                : 'Nhập số lượng để hệ thống tính thành tiền.'}
+            </p>
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+              <p className="text-xs text-destructive">
+                Sản phẩm này chưa được thiết lập đơn giá nên chưa thể tính số lượng.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  onOpenChange(false);
+                  router.push(`/catalog?tab=products&select=${productId}`);
+                }}
+              >
+                Cập nhật đơn giá
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="note">Ghi chú</Label>

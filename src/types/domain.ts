@@ -20,6 +20,7 @@ export interface Product {
   categoryName: string;
   categoryOrder: number;
   unit?: string;
+  unitPrice?: number;
   isActive: boolean;
   createdAt: string;
 }
