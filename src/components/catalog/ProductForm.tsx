@@ -28,6 +28,7 @@ import {
 import { productsApi } from '@/lib/api/products';
 import { useCategories } from '@/hooks/useProducts';
 import { getApiErrorMessage } from '@/lib/api/client';
+import { parseNumberInput } from '@/lib/utils';
 import { useIsAdmin } from '@/lib/auth/permissions';
 import type { Product, Category } from '@/types/domain';
 
@@ -36,6 +37,10 @@ const schema = z.object({
   categoryName: z.string().min(1, 'Chọn nhóm'),
   categoryOrder: z.number().int().min(1).max(99),
   unit: z.string().trim().max(20).optional(),
+  unitPrice: z
+    .number({ invalid_type_error: 'Đơn giá không hợp lệ' })
+    .positive('Đơn giá phải lớn hơn 0')
+    .max(1_000_000_000, 'Đơn giá quá lớn'),
   isActive: z.boolean(),
 });
 
@@ -71,6 +76,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
       categoryName: '',
       categoryOrder: 1,
       unit: '',
+      unitPrice: 0,
       isActive: true,
     },
   });
@@ -85,6 +91,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
         categoryName: '',
         categoryOrder: 1,
         unit: '',
+        unitPrice: 0,
         isActive: true,
       });
     } else if (product) {
@@ -93,6 +100,7 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
         categoryName: product.categoryName,
         categoryOrder: product.categoryOrder,
         unit: product.unit ?? '',
+        unitPrice: product.unitPrice ?? 0,
         isActive: product.isActive,
       });
     }
@@ -127,12 +135,14 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
             categoryName: values.categoryName,
             categoryOrder: values.categoryOrder,
             unit: values.unit || undefined,
+            unitPrice: values.unitPrice,
           })
         : await productsApi.update(product!._id, {
             name: values.name,
             categoryName: values.categoryName,
             categoryOrder: values.categoryOrder,
             unit: values.unit || undefined,
+            unitPrice: values.unitPrice,
             isActive: values.isActive,
           });
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -222,6 +232,25 @@ export function ProductForm({ product, isNew, onSaved, onCancelled }: Props) {
       <div className="space-y-1.5">
         <Label htmlFor="unit">Đơn vị</Label>
         <Input id="unit" placeholder="chai, kg..." {...register('unit')} disabled={!isAdmin} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="unit-price">Đơn giá / đơn vị (VNĐ) *</Label>
+        <Input
+          id="unit-price"
+          inputMode="numeric"
+          placeholder="VD: 120000"
+          {...register('unitPrice', {
+            setValueAs: (value) => parseNumberInput(String(value)),
+          })}
+          disabled={!isAdmin}
+        />
+        {errors.unitPrice && (
+          <p className="text-xs text-destructive">{errors.unitPrice.message}</p>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          Đơn giá hiện tại được dùng để tính số lượng và thành tiền trong Điền nâng cao.
+        </p>
       </div>
 
       {!isNew && (

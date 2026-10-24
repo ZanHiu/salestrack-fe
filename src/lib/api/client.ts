@@ -32,6 +32,9 @@ apiClient.interceptors.response.use(
 
 export function getApiErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
+    if (err.code === 'ERR_NETWORK' || !err.response) {
+      return 'Không thể kết nối máy chủ. Vui lòng kiểm tra backend đang chạy.';
+    }
     const msg = err.response?.data?.error?.message;
     if (typeof msg === 'string') return msg;
   }

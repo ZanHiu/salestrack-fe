@@ -38,6 +38,7 @@ export const productsApi = {
     categoryName: string;
     categoryOrder: number;
     unit?: string;
+    unitPrice?: number;
   }) {
     const res = await apiClient.post('/products', dto);
     return res.data.data as Product;
@@ -49,6 +50,7 @@ export const productsApi = {
       categoryName: string;
       categoryOrder: number;
       unit: string;
+      unitPrice: number;
       isActive: boolean;
     }>,
   ) {
